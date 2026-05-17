@@ -1,0 +1,89 @@
+api:
+  host: 0.0.0.0
+  port: 10006
+  debug: true
+pipeline:
+  batch_time_budget: 14400
+  prompt_timeout: 800.0
+  use_planner: false
+benchmark: true
+llm_clients:
+  openrouter:
+    enabled: false
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY
+  vision-coder:
+    enabled: true
+    base_url: http://localhost:8001/v1
+    api_key: local
+    vllm:
+      model: Qwen/Qwen3.5-397B-A17B-FP8
+      gpu_ids: 0,1,2,3
+      tensor_parallel_size: 4
+      gpu_memory_utilization: 0.9
+      max_model_len: 65536
+      max_num_seqs: 48
+actors:
+  planner:
+    client: vision-coder
+    model: Qwen/Qwen3.5-397B-A17B-FP8
+    workers: 4
+    queue_size: 8
+    max_tokens: 16384
+    temperature: 0.0
+    seed: 42
+    reasoning_effort: medium
+  coder:
+    client: vision-coder
+    model: Qwen/Qwen3.5-397B-A17B-FP8
+    workers: 8
+    queue_size: 16
+    max_tokens: 8192
+    temperature: 0.0
+    multimodal: true
+    seed: 42
+    ensemble_size: 6
+    ensemble_temperature: 0.3
+  patcher:
+    workers: 6
+    queue_size: 16
+  critic:
+    client: vision-coder
+    model: Qwen/Qwen3.5-397B-A17B-FP8
+    workers: 6
+    queue_size: 16
+    max_tokens: 16384
+    temperature: 0.0
+    seed: 42
+    reasoning_effort: medium
+    ensemble_size: 1
+  judge:
+    client: vision-coder
+    model: Qwen/Qwen3.5-397B-A17B-FP8
+    workers: 6
+    queue_size: 16
+    max_tokens: 8192
+    temperature: 0.0
+    seed: 42
+  checker:
+    workers: 4
+    queue_size: 16
+  renderer:
+    workers: 4
+    queue_size: 16
+event_bus:
+  max_iter: 2
+  task_deadline_s: 3600
+  score_threshold: 0.55
+js_checker:
+  execution_timeout_ms: 5000
+  node_binary: node
+renderer:
+  sidecar_host: 127.0.0.1
+  sidecar_port: 8003
+  startup_timeout_s: 60.0
+  request_timeout_s: 45.0
+  node_binary: node
+  img_size: 518
+  grid_gap: 5
+  bg_color: null
